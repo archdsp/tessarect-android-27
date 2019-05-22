@@ -1,0 +1,7 @@
+[submodule "tess-two"]
+	path = "tess-two"
+	url = https://github.com/rmtheis/tess-two.git
+
+[submodule "GlastoCollider-Android"]
+	path = "GlastoCollider-Android"
+	url = https://github.com/danstowell/GlastoCollider-Android.git
