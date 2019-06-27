@@ -1,2 +1,0 @@
-cd jni
-ndk-build -j8
