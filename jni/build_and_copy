@@ -1,0 +1,5 @@
+ndk-build -j8
+cp /home/dsparch/Project/SDK/tesseract-android27-0.0.1/libs/arm64-v8a/* \
+/home/dsparch/Project/BaseApp/app/src/main/JniLibs/arm64-v8a/
+echo done
+

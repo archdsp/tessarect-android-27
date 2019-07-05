@@ -5,4 +5,6 @@ LIB_TESSERACT_PATH := $(ROOT_PATH)/tesseract
 LIB_LEPTONICA_PATH := $(ROOT_PATH)/leptonica
 LIB_JPEG_PATH := $(ROOT_PATH)/jpeg
 LIB_PNG_PATH := $(ROOT_PATH)/png
+ANDROID_UTIL_PATH := $(ROOT_PATH)/util
+
 include $(call all-subdir-makefiles)

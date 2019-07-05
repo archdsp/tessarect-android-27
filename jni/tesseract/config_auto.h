@@ -1,7 +1,11 @@
 #ifndef CONFIG_AUTO_H
 #define CONFIG_AUTO_H
+
 /* config_auto.h: begin */
 
+#ifdef ANDROID_DEBUG
+#include "android_log.h"          // for MARS project android app logging.
+#endif
 
 /* Define if building universal (internal helper macro) */
 /* #undef AC_APPLE_UNIVERSAL_BUILD */
@@ -122,6 +126,7 @@
 
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #define TIME_WITH_SYS_TIME 1
+
 
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
    significant byte first (like Motorola and SPARC, unlike Intel). */

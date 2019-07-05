@@ -15,6 +15,7 @@ LOCAL_SRC_FILES := \
 
 LOCAL_CFLAGS := \
   -DHAVE_CONFIG_H \
+  -DANDROID_DEBUG \
   -fPIE -pie
 
 LOCAL_LDLIBS := \
@@ -24,11 +25,13 @@ LOCAL_C_INCLUDES += \
   $(LOCAL_PATH) \
   $(LOCAL_PATH)/src/src \
   $(LIB_JPEG_PATH) \
-  $(LIB_PNG_PATH)
-
+  $(LIB_PNG_PATH) \
+  $(LIB_TESSERACT_PATH)/src \
+  $(ANDROID_UTIL_PATH)
+  
 LOCAL_LDLIBS += \
   -ljnigraphics \
-  -llog
+  -llog \
 
 # common
 LOCAL_SHARED_LIBRARIES:= libjpgt libpngt

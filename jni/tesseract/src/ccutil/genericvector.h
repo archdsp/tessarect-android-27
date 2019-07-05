@@ -343,6 +343,9 @@ class GenericVector {
     return true;
   }
 
+public:
+	T* data_;
+	
  protected:
   // Internal recursive version of choose_nth_item.
   int choose_nth_item(int target_index, int start, int end, unsigned int* seed);
@@ -356,7 +359,6 @@ class GenericVector {
   static const int kDefaultVectorSize = 4;
   int32_t size_used_{};
   int32_t size_reserved_{};
-  T* data_;
   TessCallback1<T>* clear_cb_;
   // Mutable because Run method is not const
   mutable TessResultCallback2<bool, T const&, T const&>* compare_cb_;

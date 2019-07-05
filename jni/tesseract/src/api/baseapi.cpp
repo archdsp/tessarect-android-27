@@ -94,6 +94,7 @@
 #include "tprintf.h"           // for tprintf
 #include "werd.h"              // for WERD, WERD_IT, W_FUZZY_NON, W_FUZZY_SP
 
+
 static BOOL_VAR(stream_filelist, false, "Stream a filelist from stdin");
 
 namespace tesseract {
@@ -107,7 +108,7 @@ const char kUNLVReject = '~';
 /** Character used by UNLV as a suspect marker. */
 const char kUNLVSuspect = '^';
 /**
- * Filename used for input image file, from which to derive a name to search
+k * Filename used for input image file, from which to derive a name to search
  * for a possible UNLV zone file, if none is specified by SetInputName.
  */
 static const char* kInputFile = "noname.tif";
@@ -292,10 +293,13 @@ bool TessBaseAPI::GetIntVariable(const char *name, int *value) const {
   return true;
 }
 
-bool TessBaseAPI::GetBoolVariable(const char *name, bool *value) const {
+bool TessBaseAPI::GetBoolVariable(const char *name, bool *value) const
+{
   auto *p = ParamUtils::FindParam<BoolParam>(
       name, GlobalParams()->bool_params, tesseract_->params()->bool_params);
-  if (p == nullptr) return false;
+  if (p == nullptr)
+	  return false;
+  
   *value = bool(*p);
   return true;
 }
@@ -816,11 +820,13 @@ PageIterator* TessBaseAPI::AnalyseLayout(bool merge_similar_words) {
  * Recognize the tesseract global image and return the result as Tesseract
  * internal structures.
  */
-int TessBaseAPI::Recognize(ETEXT_DESC* monitor) {
+int TessBaseAPI::Recognize(ETEXT_DESC* monitor)
+{
   if (tesseract_ == nullptr)
     return -1;
   if (FindLines() != 0)
     return -1;
+
   delete page_res_;
   if (block_list_->empty()) {
     page_res_ = new PAGE_RES(false, block_list_,
@@ -830,35 +836,44 @@ int TessBaseAPI::Recognize(ETEXT_DESC* monitor) {
 
   tesseract_->SetBlackAndWhitelist();
   recognition_done_ = true;
+
 #ifndef DISABLED_LEGACY_ENGINE
-  if (tesseract_->tessedit_resegment_from_line_boxes) {
+  if (tesseract_->tessedit_resegment_from_line_boxes)
+  {
     page_res_ = tesseract_->ApplyBoxes(*input_file_, true, block_list_);
-  } else if (tesseract_->tessedit_resegment_from_boxes) {
+  }
+  else if (tesseract_->tessedit_resegment_from_boxes)
+  {
     page_res_ = tesseract_->ApplyBoxes(*input_file_, false, block_list_);
-  } else
+  }
+  else
 #endif  // ndef DISABLED_LEGACY_ENGINE
   {
     page_res_ = new PAGE_RES(tesseract_->AnyLSTMLang(),
                              block_list_, &tesseract_->prev_word_best_choice_);
   }
-
-  if (page_res_ == nullptr) {
+  
+  if (page_res_ == nullptr)
+  {
     return -1;
   }
 
-  if (tesseract_->tessedit_train_line_recognizer) {
-    tesseract_->TrainLineRecognizer(*input_file_, *output_file_, block_list_);
+  if (tesseract_->tessedit_train_line_recognizer)
+  {
+	tesseract_->TrainLineRecognizer(*input_file_, *output_file_, block_list_);
     tesseract_->CorrectClassifyWords(page_res_);
     return 0;
   }
 #ifndef DISABLED_LEGACY_ENGINE
-  if (tesseract_->tessedit_make_boxes_from_boxes) {
+  if (tesseract_->tessedit_make_boxes_from_boxes)
+  {
     tesseract_->CorrectClassifyWords(page_res_);
     return 0;
   }
 #endif  // ndef DISABLED_LEGACY_ENGINE
 
-  if (truth_cb_ != nullptr) {
+  if (truth_cb_ != nullptr)
+  {
     tesseract_->wordrec_run_blamer.set_value(true);
     auto *page_it = new PageIterator(
             page_res_, tesseract_, thresholder_->GetScaleFactor(),
@@ -870,7 +885,8 @@ int TessBaseAPI::Recognize(ETEXT_DESC* monitor) {
   }
 
   int result = 0;
-  if (tesseract_->interactive_display_mode) {
+  if (tesseract_->interactive_display_mode)
+  {
     #ifndef GRAPHICS_DISABLED
     tesseract_->pgeditor_main(rect_width_, rect_height_, page_res_);
     #endif  // GRAPHICS_DISABLED
@@ -880,30 +896,44 @@ int TessBaseAPI::Recognize(ETEXT_DESC* monitor) {
     page_res_ = nullptr;
     return -1;
   #ifndef DISABLED_LEGACY_ENGINE
-  } else if (tesseract_->tessedit_train_from_boxes) {
+  }
+  else if (tesseract_->tessedit_train_from_boxes)
+  {
     STRING fontname;
     ExtractFontName(*output_file_, &fontname);
     tesseract_->ApplyBoxTraining(fontname, page_res_);
-  } else if (tesseract_->tessedit_ambigs_training) {
+  }
+  else if (tesseract_->tessedit_ambigs_training)
+  {
     FILE *training_output_file = tesseract_->init_recog_training(*input_file_);
     // OCR the page segmented into words by tesseract.
     tesseract_->recog_training_segmented(
         *input_file_, page_res_, monitor, training_output_file);
     fclose(training_output_file);
   #endif  // ndef DISABLED_LEGACY_ENGINE
-  } else {
+  }
+  else
+  {
     // Now run the main recognition.
     bool wait_for_text = true;
     GetBoolVariable("paragraph_text_based", &wait_for_text);
-    if (!wait_for_text) DetectParagraphs(false);
-    if (tesseract_->recog_all_words(page_res_, monitor, nullptr, nullptr, 0)) {
-      if (wait_for_text) DetectParagraphs(true);
-    } else {
+
+    if (!wait_for_text)
+		DetectParagraphs(false);
+	
+    if (tesseract_->recog_all_words(page_res_, monitor, nullptr, nullptr, 0))
+	{
+      if (wait_for_text)
+		  DetectParagraphs(true);
+    }
+	else
+	{
       result = -1;
     }
   }
+
   return result;
-}
+} // end int TessBaseAPI::Recognize(ETEXT_DESC* monitor)
 
 #ifndef DISABLED_LEGACY_ENGINE
 /** Tests the chopper by exhaustively running chop_one_blob. */
@@ -1301,14 +1331,20 @@ char* TessBaseAPI::GetUTF8Text()
 {
   if (tesseract_ == nullptr ||
       (!recognition_done_ && Recognize(nullptr) < 0))
+  {
     return nullptr;
+  }
+
   STRING text("");
   ResultIterator *it = GetIterator();
-  do {
-    if (it->Empty(RIL_PARA)) continue;
+  do
+  {
+    if (it->Empty(RIL_PARA))
+		continue;
     const std::unique_ptr<const char[]> para_text(it->GetUTF8Text(RIL_PARA));
     text += para_text.get();
   } while (it->Next(RIL_PARA));
+  
   char* result = new char[text.length() + 1];
   strncpy(result, text.string(), text.length() + 1);
   delete it;

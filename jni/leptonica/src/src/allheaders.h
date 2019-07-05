@@ -34,6 +34,10 @@
 
 #include "alltypes.h"
 
+#ifdef ANDROID_DEBUG
+#include "android_log.h"
+#endif
+
 #ifndef NO_PROTOS
 /*
  *  These prototypes were autogen'd by xtractprotos, v. 1.5

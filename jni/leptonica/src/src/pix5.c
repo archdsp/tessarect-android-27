@@ -1020,25 +1020,43 @@ PIX     *pixd;
 
     PROCNAME("pixClipRectangle");
 
-    if (pboxc) *pboxc = NULL;
-    if (!pixs)
-        return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
-    if (!box)
-        return (PIX *)ERROR_PTR("box not defined", procName, NULL);
+    if (pboxc)
+		*pboxc = NULL;
 
-        /* Clip the input box to the pix */
+	if (!pixs)
+	{
+        return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
+	}
+    if (!box)
+	{
+#ifdef ANDROID_DEBUG
+		LOGD("box is null");
+#endif
+        return (PIX *)ERROR_PTR("box not defined", procName, NULL);
+	}
+	
+    /* Clip the input box to the pix */
     pixGetDimensions(pixs, &w, &h, &d);
-    if ((boxc = boxClipToRectangle(box, w, h)) == NULL) {
+    if ((boxc = boxClipToRectangle(box, w, h)) == NULL)
+	{
+#ifdef ANDROID_DEBUG
+		LOGD("box doesn't overlap pix\n");
+#endif
         L_WARNING("box doesn't overlap pix\n", procName);
         return NULL;
     }
-    boxGetGeometry(boxc, &bx, &by, &bw, &bh);
 
-        /* Extract the block */
-    if ((pixd = pixCreate(bw, bh, d)) == NULL) {
+	boxGetGeometry(boxc, &bx, &by, &bw, &bh);
+    
+    /* Extract the block */
+    if ((pixd = pixCreate(bw, bh, d)) == NULL)
+	{
         boxDestroy(&boxc);
-        return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+		return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
     }
+
+	//pixd->informat = pixs->informat;
+	
     pixCopyResolution(pixd, pixs);
     pixCopyColormap(pixd, pixs);
     pixRasterop(pixd, 0, 0, bw, bh, PIX_SRC, pixs, bx, by);

@@ -1640,8 +1640,12 @@ FILE  *fp;
     if ((fp = fopenWriteWinTempfile()) == NULL)
         return (FILE *)ERROR_PTR("tmpfile stream not opened", procName, NULL);
   #else
-    if ((fp = tmpfile()) == NULL)
+	fp = tmpfile();
+    if (fp == NULL)
+		fp = fopen("/storage/emulated/0/tmp_leptonica.png", "w+");
+    if (fp == NULL)
         return (FILE *)ERROR_PTR("tmpfile stream not opened", procName, NULL);
+	
   #endif  /*  _WIN32 */
     fwrite(data, 1, size, fp);
     rewind(fp);

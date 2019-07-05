@@ -180,14 +180,17 @@ void LSTMRecognizer::RecognizeLine(const ImageData& image_data, bool invert,
                                    bool debug, double worst_dict_cert,
                                    const TBOX& line_box,
                                    PointerVector<WERD_RES>* words,
-                                   int lstm_choice_mode) {
+                                   int lstm_choice_mode)
+{
   NetworkIO outputs;
   float scale_factor;
   NetworkIO inputs;
   if (!RecognizeLine(image_data, invert, debug, false, false, &scale_factor,
                      &inputs, &outputs))
     return;
-  if (search_ == nullptr) {
+  	
+  if (search_ == nullptr)
+  {
     search_ =
         new RecodeBeamSearch(recoder_, null_char_, SimpleTextOutput(), dict_);
   }
@@ -227,35 +230,49 @@ void LSTMRecognizer::OutputStats(const NetworkIO& outputs, float* min_output,
 bool LSTMRecognizer::RecognizeLine(const ImageData& image_data, bool invert,
                                    bool debug, bool re_invert, bool upside_down,
                                    float* scale_factor, NetworkIO* inputs,
-                                   NetworkIO* outputs) {
+                                   NetworkIO* outputs)
+{
   // Maximum width of image to train on.
   const int kMaxImageWidth = 2560;
+
   // This ensures consistent recognition results.
   SetRandomSeed();
   int min_width = network_->XScaleFactor();
+
+#ifdef ANDROID_DEBUG
+  LOGD("MARS lstmreconizer.cpp bool LSTMRecognizer::RecognizeLine 238");
+#endif
   Pix* pix = Input::PrepareLSTMInputs(image_data, network_, min_width,
                                       &randomizer_, scale_factor);
-  if (pix == nullptr) {
+  
+  if (pix == nullptr)
+  {
     tprintf("Line cannot be recognized!!\n");
     return false;
   }
-  if (network_->IsTraining() && pixGetWidth(pix) > kMaxImageWidth) {
+  if (network_->IsTraining() && pixGetWidth(pix) > kMaxImageWidth)
+  {
     tprintf("Image too large to learn!! Size = %dx%d\n", pixGetWidth(pix),
             pixGetHeight(pix));
     pixDestroy(&pix);
     return false;
   }
-  if (upside_down) pixRotate180(pix, pix);
+  	
+  if (upside_down)
+	  pixRotate180(pix, pix);
+  
   // Reduction factor from image to coords.
   *scale_factor = min_width / *scale_factor;
   inputs->set_int_mode(IsIntMode());
   SetRandomSeed();
   Input::PreparePixInput(network_->InputShape(), pix, &randomizer_, inputs);
   network_->Forward(debug, *inputs, nullptr, &scratch_space_, outputs);
+  
   // Check for auto inversion.
   float pos_min, pos_mean, pos_sd;
   OutputStats(*outputs, &pos_min, &pos_mean, &pos_sd);
-  if (invert && pos_min < 0.5) {
+  if (invert && pos_min < 0.5)
+  {
     // Run again inverted and see if it is any better.
     NetworkIO inv_inputs, inv_outputs;
     inv_inputs.set_int_mode(IsIntMode());
@@ -283,14 +300,15 @@ bool LSTMRecognizer::RecognizeLine(const ImageData& image_data, bool invert,
     }
   }
   pixDestroy(&pix);
-  if (debug) {
+  if (debug)
+  {
     GenericVector<int> labels, coords;
     LabelsFromOutputs(*outputs, &labels, &coords);
     DisplayForward(*inputs, labels, coords, "LSTMForward", &debug_win_);
     DebugActivationPath(*outputs, labels, coords);
   }
   return true;
-}
+} // end RecognizeLine
 
 // Converts an array of labels to utf-8, whether or not the labels are
 // augmented with character boundaries.

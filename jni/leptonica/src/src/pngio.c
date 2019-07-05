@@ -1293,13 +1293,18 @@ PIX   *pix;
     PROCNAME("pixReadMemPng");
 
     if (!data)
-        return (PIX *)ERROR_PTR("cdata not defined", procName, NULL);
+	   return (PIX *)ERROR_PTR("cdata not defined", procName, NULL);
 
     if ((fp = fopenReadFromMemory(data, size)) == NULL)
+	{
+		LOGD("으아아아아씨이잉이이이바알새끼이이이2");
         return (PIX *)ERROR_PTR("stream not opened", procName, NULL);
+	}
+
     pix = pixReadStreamPng(fp);
     fclose(fp);
-    if (!pix) L_ERROR("pix not read\n", procName);
+    if (!pix)
+		L_ERROR("pix not read\n", procName);
     return pix;
 }
 
@@ -1330,9 +1335,13 @@ FILE    *fp;
 
     PROCNAME("pixWriteMemPng");
 
-    if (pdata) *pdata = NULL;
-    if (psize) *psize = 0;
-    if (!pdata)
+    if (pdata)
+		*pdata = NULL;
+	
+    if (psize)
+		*psize = 0;
+
+	if (!pdata)
         return ERROR_INT("&data not defined", procName, 1 );
     if (!psize)
         return ERROR_INT("&size not defined", procName, 1 );
@@ -1349,15 +1358,25 @@ FILE    *fp;
     if ((fp = fopenWriteWinTempfile()) == NULL)
         return ERROR_INT("tmpfile stream not opened", procName, 1);
   #else
-    if ((fp = tmpfile()) == NULL)
-        return ERROR_INT("tmpfile stream not opened", procName, 1);
+
+	fp = tmpfile();
+	if (fp == NULL)
+		fp = fopen("/storage/emulated/0/tmp_leptonica.png", "w+");
+	
+	if (fp == NULL)
+        return ERROR_INT("tmpfile stream not opened", procName, 1);		
+
   #endif  /* _WIN32 */
-    ret = pixWriteStreamPng(fp, pix, gamma);
+
+	ret = pixWriteStreamPng(fp, pix, gamma);
     rewind(fp);
-    *pdata = l_binaryReadStream(fp, psize);
+	*pdata = l_binaryReadStream(fp, psize);
+	if (pdata == NULL)
+        return ERROR_INT("tmpfile stream cannot be read", procName, 1);
+
 #endif  /* HAVE_FMEMOPEN */
-    fclose(fp);
-    return ret;
+	fclose(fp);
+	return ret;
 }
 
 /* --------------------------------------------*/

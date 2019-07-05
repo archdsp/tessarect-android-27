@@ -18,6 +18,8 @@ int main()
 	start = clock();
 	Pix *image = pixRead("/data/Temp/camImg1.png");
 	api->SetImage(image);
+    fprintf(stdout, "악마의 구간.\n");
+
 	char *outText = api->GetUTF8Text();
 	end = clock();
 

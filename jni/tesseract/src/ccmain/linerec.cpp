@@ -30,8 +30,10 @@
 
 #include <algorithm>
 
-namespace tesseract {
+namespace tesseract
+{
 
+	static int jisu = 0;
 // Scale factor to make certainty more comparable to Tesseract.
 const float kCertaintyScale = 7.0f;
 // Worst acceptable certainty for a dictionary word.
@@ -134,14 +136,16 @@ ImageData* Tesseract::GetLineData(const TBOX& line_box,
   TBOX revised_box;
   ImageData* image_data = GetRectImage(line_box, block, kImagePadding,
                                        &revised_box);
-  if (image_data == nullptr) return nullptr;
+  if (image_data == nullptr)
+	  return nullptr;
   image_data->set_page_number(applybox_page);
   // Copy the boxes and shift them so they are relative to the image.
   FCOORD block_rotation(block.re_rotation().x(), -block.re_rotation().y());
   ICOORD shift = -revised_box.botleft();
   GenericVector<TBOX> line_boxes;
   GenericVector<STRING> line_texts;
-  for (int b = start_box; b < end_box; ++b) {
+  for (int b = start_box; b < end_box; ++b)
+  {
     TBOX box = boxes[b];
     box.rotate(block_rotation);
     box.move(shift);
@@ -161,10 +165,12 @@ ImageData* Tesseract::GetLineData(const TBOX& line_box,
 // can be used to invoke a different CJK recognition engine. The revised_box
 // is also returned to enable calculation of output bounding boxes.
 ImageData* Tesseract::GetRectImage(const TBOX& box, const BLOCK& block,
-                                   int padding, TBOX* revised_box) const {
+                                   int padding, TBOX* revised_box) const
+{
   TBOX wbox = box;
   wbox.pad(padding, padding);
   *revised_box = wbox;
+  
   // Number of clockwise 90 degree rotations needed to get back to tesseract
   // coords from the clipped image.
   int num_rotations = 0;
@@ -174,45 +180,70 @@ ImageData* Tesseract::GetRectImage(const TBOX& box, const BLOCK& block,
     num_rotations = 2;
   else if (block.re_rotation().y() < 0.0f)
     num_rotations = 3;
+  
   // Handle two cases automatically: 1 the box came from the block, 2 the box
   // came from a box file, and refers to the image, which the block may not.
   if (block.pdblk.bounding_box().major_overlap(*revised_box))
     revised_box->rotate(block.re_rotation());
+  
   // Now revised_box always refers to the image.
   // BestPix is never colormapped, but may be of any depth.
+
   Pix* pix = BestPix();
+#ifdef ANDROID_DEBUG
+  LOGD("linerec.cpp 208 GetRectImage");
+  LOGD("BextPix() 포맷은 : %d", pix->informat);
+#endif 
+
   int width = pixGetWidth(pix);
   int height = pixGetHeight(pix);
+
   TBOX image_box(0, 0, width, height);
+
   // Clip to image bounds;
   *revised_box &= image_box;
-  if (revised_box->null_box()) return nullptr;
+  if (revised_box->null_box())
+	  return nullptr;
+  
   Box* clip_box = boxCreate(revised_box->left(), height - revised_box->top(),
                             revised_box->width(), revised_box->height());
   Pix* box_pix = pixClipRectangle(pix, clip_box, nullptr);
-  if (box_pix == nullptr) return nullptr;
+#ifdef ANDROID_DEBUG
+  LOGD("pixClipRectangle() 하고 나니 이미지 포맷이 : %d", box_pix->informat);
+#endif 
+
+  if (box_pix == nullptr)
+ 	  return nullptr;
+ 
   boxDestroy(&clip_box);
-  if (num_rotations > 0) {
+  
+  if (num_rotations > 0)
+  {
     Pix* rot_pix = pixRotateOrth(box_pix, num_rotations);
     pixDestroy(&box_pix);
     box_pix = rot_pix;
   }
+
   // Convert sub-8-bit images to 8 bit.
   int depth = pixGetDepth(box_pix);
-  if (depth < 8) {
+  if (depth < 8)
+  {
     Pix* grey;
     grey = pixConvertTo8(box_pix, false);
     pixDestroy(&box_pix);
     box_pix = grey;
   }
+  
   bool vertical_text = false;
-  if (num_rotations > 0) {
+  if (num_rotations > 0)
+  {
     // Rotated the clipped revised box back to internal coordinates.
     FCOORD rotation(block.re_rotation().x(), -block.re_rotation().y());
     revised_box->rotate(rotation);
     if (num_rotations != 2)
       vertical_text = true;
   }
+
   return new ImageData(vertical_text, box_pix);
 }
 
@@ -220,23 +251,38 @@ ImageData* Tesseract::GetRectImage(const TBOX& box, const BLOCK& block,
 // Recognizes a word or group of words, converting to WERD_RES in *words.
 // Analogous to classify_word_pass1, but can handle a group of words as well.
 void Tesseract::LSTMRecognizeWord(const BLOCK& block, ROW *row, WERD_RES *word,
-                                  PointerVector<WERD_RES>* words) {
+                                  PointerVector<WERD_RES>* words)
+{
   TBOX word_box = word->word->bounding_box();
+  
   // Get the word image - no frills.
   if (tessedit_pageseg_mode == PSM_SINGLE_WORD ||
-      tessedit_pageseg_mode == PSM_RAW_LINE) {
+      tessedit_pageseg_mode == PSM_RAW_LINE)
+  {
     // In single word mode, use the whole image without any other row/word
     // interpretation.
     word_box = TBOX(0, 0, ImageWidth(), ImageHeight());
-  } else {
+  }
+  else
+  {
     float baseline = row->base_line((word_box.left() + word_box.right()) / 2);
     if (baseline + row->descenders() < word_box.bottom())
       word_box.set_bottom(baseline + row->descenders());
     if (baseline + row->x_height() + row->ascenders() > word_box.top())
       word_box.set_top(baseline + row->x_height() + row->ascenders());
   }
+  
   ImageData* im_data = GetRectImage(word_box, block, kImagePadding, &word_box);
-  if (im_data == nullptr) return;
+  if (im_data == nullptr)
+	  return;
+  
+  // TODO
+  if (im_data->GetPix() == nullptr)
+	  LOGD("ImageData->GetPix() 자꾸 널인데. 생성 이상한데");
+  // 	  return;
+#ifdef ANDROID_DEBUG
+  LOGD("MARS tesseract/src/ccmain/linerec.cpp 248-250 LSTMRecognizeWord");
+#endif
   lstm_recognizer_->RecognizeLine(*im_data, true, classify_debug_level > 0,
                                   kWorstDictCertainty / kCertaintyScale,
                                   word_box, words, lstm_choice_mode);
@@ -247,7 +293,8 @@ void Tesseract::LSTMRecognizeWord(const BLOCK& block, ROW *row, WERD_RES *word,
 // Apply segmentation search to the given set of words, within the constraints
 // of the existing ratings matrix. If there is already a best_choice on a word
 // leaves it untouched and just sets the done/accepted etc flags.
-void Tesseract::SearchWords(PointerVector<WERD_RES>* words) {
+void Tesseract::SearchWords(PointerVector<WERD_RES>* words)
+{
   // Run the segmentation search on the network outputs and make a BoxWord
   // for each of the output words.
   // If we drop a word as junk, then there is always a space in front of the

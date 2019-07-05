@@ -120,13 +120,17 @@ int FloatWordFeature::SortByXBucket(const void* v1, const void* v2) {
   return x_diff;
 }
 
-ImageData::ImageData() : page_number_(-1), vertical_text_(false) {
+ImageData::ImageData() : page_number_(-1), vertical_text_(false)
+{
 }
+	
 // Takes ownership of the pix and destroys it.
 ImageData::ImageData(bool vertical, Pix* pix)
-  : page_number_(0), vertical_text_(vertical) {
+  : page_number_(0), vertical_text_(vertical)
+{
   SetPix(pix);
 }
+	
 ImageData::~ImageData() {
 }
 
@@ -135,10 +139,12 @@ ImageData::~ImageData() {
 ImageData* ImageData::Build(const char* name, int page_number, const char* lang,
                             const char* imagedata, int imagedatasize,
                             const char* truth_text, const char* box_text) {
+
   auto* image_data = new ImageData();
   image_data->imagefilename_ = name;
   image_data->page_number_ = page_number;
   image_data->language_ = lang;
+  
   // Save the imagedata.
   image_data->image_data_.resize_no_init(imagedatasize);
   memcpy(&image_data->image_data_[0], imagedata, imagedatasize);
@@ -227,47 +233,71 @@ Pix* ImageData::GetPix() const {
 // to the image to achieve the target_height.
 Pix* ImageData::PreScale(int target_height, int max_height, float* scale_factor,
                          int* scaled_width, int* scaled_height,
-                         GenericVector<TBOX>* boxes) const {
+                         GenericVector<TBOX>* boxes) const
+{
   int input_width = 0;
   int input_height = 0;
   Pix* src_pix = GetPix();
+
+#ifdef ANDROID_DEBUG
+  LOGD("MARS imagedata.cpp Pix* ImageData::PreScale 236");
+  if (src_pix == nullptr)
+  {
+	  LOGD("아씨발 이렇게 무책임한게 어딨어 썅");
+	  printf("씨발 한번만 걸려라이씨");
+  }
+#endif
+  
   ASSERT_HOST(src_pix != nullptr);
   input_width = pixGetWidth(src_pix);
   input_height = pixGetHeight(src_pix);
-  if (target_height == 0) {
+  
+  if (target_height == 0)
     target_height = std::min(input_height, max_height);
-  }
+
   float im_factor = static_cast<float>(target_height) / input_height;
+
   if (scaled_width != nullptr)
     *scaled_width = IntCastRounded(im_factor * input_width);
+
   if (scaled_height != nullptr)
     *scaled_height = target_height;
+
   // Get the scaled image.
   Pix* pix = pixScale(src_pix, im_factor, im_factor);
-  if (pix == nullptr) {
+  if (pix == nullptr)
     tprintf("Scaling pix of size %d, %d by factor %g made null pix!!\n",
             input_width, input_height, im_factor);
-  }
-  if (scaled_width != nullptr) *scaled_width = pixGetWidth(pix);
-  if (scaled_height != nullptr) *scaled_height = pixGetHeight(pix);
+  
+  if (scaled_width != nullptr)
+	  *scaled_width = pixGetWidth(pix);
+  if (scaled_height != nullptr)
+	  *scaled_height = pixGetHeight(pix);
   pixDestroy(&src_pix);
-  if (boxes != nullptr) {
+
+  if (boxes != nullptr)
+  {
     // Get the boxes.
     boxes->truncate(0);
-    for (int b = 0; b < boxes_.size(); ++b) {
+    for (int b = 0; b < boxes_.size(); ++b)
+	{
       TBOX box = boxes_[b];
       box.scale(im_factor);
       boxes->push_back(box);
     }
-    if (boxes->empty()) {
+    if (boxes->empty())
+	{
       // Make a single box for the whole image.
       TBOX box(0, 0, im_factor * input_width, target_height);
       boxes->push_back(box);
     }
   }
-  if (scale_factor != nullptr) *scale_factor = im_factor;
+  
+  if (scale_factor != nullptr)
+	  *scale_factor = im_factor;
+
   return pix;
-}
+}// end Prescale function
 
 int ImageData::MemoryUsed() const {
   return image_data_.size();
@@ -327,28 +357,40 @@ void ImageData::AddBoxes(const GenericVector<TBOX>& boxes,
 // Saves the given Pix as a PNG-encoded string and destroys it.
 // In case of missing PNG support in Leptonica use PNM format,
 // which requires more memory.
-void ImageData::SetPixInternal(Pix* pix, GenericVector<char>* image_data) {
+void ImageData::SetPixInternal(Pix* pix, GenericVector<char>* image_data)
+{
   l_uint8* data;
   size_t size;
   l_int32 ret;
+
+  // TODO_MARS_PRIMARY
+#ifdef ANDROID_DEBUG
+  LOGD("src/ccstruct/imagedata.cpp 368 void ImageData::SetPixInternal");
+#endif
   ret = pixWriteMem(&data, &size, pix, IFF_PNG);
-  if (ret) {
+  if (ret)
     ret = pixWriteMem(&data, &size, pix, IFF_PNM);
-  }
+
   pixDestroy(&pix);
   image_data->resize_no_init(size);
   memcpy(&(*image_data)[0], data, size);
+
+  //TODO : lept_free won't free data sometimes
   lept_free(data);
+  if (data == NULL)
+	  lept_free(data);  
 }
 
 // Returns the Pix image for the image_data. Must be pixDestroyed after use.
-Pix* ImageData::GetPixInternal(const GenericVector<char>& image_data) {
+Pix* ImageData::GetPixInternal(const GenericVector<char>& image_data)
+{
   Pix* pix = nullptr;
-  if (!image_data.empty()) {
+  if (!image_data.empty())
+  {
     // Convert the array to an image.
     const auto* u_data =
         reinterpret_cast<const unsigned char*>(&image_data[0]);
-    pix = pixReadMem(u_data, image_data.size());
+	pix = pixReadMem(u_data, image_data.size());
   }
   return pix;
 }

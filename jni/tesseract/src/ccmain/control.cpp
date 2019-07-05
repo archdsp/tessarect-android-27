@@ -219,60 +219,82 @@ bool Tesseract::RecogAllWordsPassN(int pass_n, ETEXT_DESC* monitor,
   // added. The results will be significantly different with adaption on, and
   // deterioration will need investigation.
   pr_it->restart_page();
-  for (int w = 0; w < words->size(); ++w) {
+  for (int w = 0; w < words->size(); ++w)
+  {
     WordData* word = &(*words)[w];
-    if (w > 0) word->prev_word = &(*words)[w - 1];
-    if (monitor != nullptr) {
+    if (w > 0)
+		word->prev_word = &(*words)[w - 1];
+
+    if (monitor != nullptr)
+	{
       monitor->ocr_alive = true;
-      if (pass_n == 1) {
+      if (pass_n == 1)
+	  {
         monitor->progress = 70 * w / words->size();
-        if (monitor->progress_callback2 != nullptr) {
+        if (monitor->progress_callback2 != nullptr)
+		{
           TBOX box = pr_it->word()->word->bounding_box();
           (*monitor->progress_callback2)(monitor, box.left(),
                                         box.right(), box.top(), box.bottom());
         }
-      } else {
+      }
+	  else
+	  {
         monitor->progress = 70 + 30 * w / words->size();
-        if (monitor->progress_callback2 != nullptr) {
+        if (monitor->progress_callback2 != nullptr)
+		{
           (*monitor->progress_callback2)(monitor, 0, 0, 0, 0);
         }
       }
+	  
       if (monitor->deadline_exceeded() ||
           (monitor->cancel != nullptr && (*monitor->cancel)(monitor->cancel_this,
-                                                         words->size()))) {
+                                                         words->size())))
+	  {
         // Timeout. Fake out the rest of the words.
-        for (; w < words->size(); ++w) {
+        for (; w < words->size(); ++w)
+		{
           (*words)[w].word->SetupFake(unicharset);
         }
         return false;
       }
     }
-    if (word->word->tess_failed) {
+
+    if (word->word->tess_failed)
+	{
       int s;
       for (s = 0; s < word->lang_words.size() &&
            word->lang_words[s]->tess_failed; ++s) {}
       // If all are failed, skip it. Image words are skipped by this test.
       if (s > word->lang_words.size()) continue;
     }
-    // Sync pr_it with the wth WordData.
+	
+	// Sync pr_it with the wth WordData.
     while (pr_it->word() != nullptr && pr_it->word() != word->word)
       pr_it->forward();
+
     ASSERT_HOST(pr_it->word() != nullptr);
     bool make_next_word_fuzzy = false;
     if (!AnyLSTMLang() &&
-        ReassignDiacritics(pass_n, pr_it, &make_next_word_fuzzy)) {
+        ReassignDiacritics(pass_n, pr_it, &make_next_word_fuzzy))
+	{
       // Needs to be setup again to see the new outlines in the chopped_word.
       SetupWordPassN(pass_n, word);
     }
-
+#ifdef ANDROID_DEBUG
+	LOGD("MARS ccmain/control.cpp 285 bool Tesseract::RecogAllWordsPassN");
+#endif
     classify_word_and_language(pass_n, pr_it, word);
-    if (tessedit_dump_choices || debug_noise_removal) {
+
+    if (tessedit_dump_choices || debug_noise_removal)
+	{
       tprintf("Pass%d: %s [%s]\n", pass_n,
               word->word->best_choice->unichar_string().string(),
               word->word->best_choice->debug_string().string());
     }
     pr_it->forward();
-    if (make_next_word_fuzzy && pr_it->word() != nullptr) {
+    if (make_next_word_fuzzy && pr_it->word() != nullptr)
+	{
       pr_it->MakeCurrentWordFuzzy();
     }
   }
@@ -304,15 +326,18 @@ bool Tesseract::recog_all_words(PAGE_RES* page_res,
                                 ETEXT_DESC* monitor,
                                 const TBOX* target_word_box,
                                 const char* word_config,
-                                int dopasses) {
+                                int dopasses)
+{
   PAGE_RES_IT page_res_it(page_res);
 
-  if (tessedit_minimal_rej_pass1) {
+  if (tessedit_minimal_rej_pass1)
+  {
     tessedit_test_adaption.set_value (true);
     tessedit_minimal_rejection.set_value (true);
   }
 
-  if (dopasses==0 || dopasses==1) {
+  if (dopasses==0 || dopasses==1)
+  {
     page_res_it.restart_page();
     // ****************** Pass 1 *******************
 
@@ -321,16 +346,23 @@ bool Tesseract::recog_all_words(PAGE_RES* page_res,
     // ie on the previous page. If the current adaptive classifier is non-empty,
     // prepare a backup starting at this page, in case it fills up. Do all this
     // independently for each language.
-    if (AdaptiveClassifierIsFull()) {
+    if (AdaptiveClassifierIsFull())
+	{
       SwitchAdaptiveClassifier();
-    } else if (!AdaptiveClassifierIsEmpty()) {
+    }
+	else if (!AdaptiveClassifierIsEmpty())
+	{
       StartBackupAdaptiveClassifier();
     }
     // Now check the sub-langs as well.
-    for (int i = 0; i < sub_langs_.size(); ++i) {
-      if (sub_langs_[i]->AdaptiveClassifierIsFull()) {
+    for (int i = 0; i < sub_langs_.size(); ++i)
+	{
+      if (sub_langs_[i]->AdaptiveClassifierIsFull())
+	  {
         sub_langs_[i]->SwitchAdaptiveClassifier();
-      } else if (!sub_langs_[i]->AdaptiveClassifierIsEmpty()) {
+      }
+	  else if (!sub_langs_[i]->AdaptiveClassifierIsEmpty())
+	  {
         sub_langs_[i]->StartBackupAdaptiveClassifier();
       }
     }
@@ -342,7 +374,8 @@ bool Tesseract::recog_all_words(PAGE_RES* page_res,
     GenericVector<WordData> words;
     SetupAllWordsPassN(1, target_word_box, word_config, page_res, &words);
     #ifndef DISABLED_LEGACY_ENGINE
-    if (tessedit_parallelize) {
+    if (tessedit_parallelize)
+	{
       PrerecAllWordsPar(words);
     }
     #endif  // ndef DISABLED_LEGACY_ENGINE
@@ -357,12 +390,19 @@ bool Tesseract::recog_all_words(PAGE_RES* page_res,
     stats_.doc_good_char_quality = 0;
 
     most_recently_used_ = this;
-    // Run pass 1 word recognition.
-    if (!RecogAllWordsPassN(1, monitor, &page_res_it, &words)) return false;
+#ifdef ANDROID_DEBUG
+	LOGD("MARS control.cpp - 385");
+#endif
+	// Run pass 1 word recognition.
+    if (!RecogAllWordsPassN(1, monitor, &page_res_it, &words))
+		return false;
+
     // Pass 1 post-processing.
     for (page_res_it.restart_page(); page_res_it.word() != nullptr;
-         page_res_it.forward()) {
-      if (page_res_it.word()->word->flag(W_REP_CHAR)) {
+         page_res_it.forward())
+	{
+      if (page_res_it.word()->word->flag(W_REP_CHAR))
+	  {
         fix_rep_char(&page_res_it);
         continue;
       }
@@ -439,7 +479,6 @@ bool Tesseract::recog_all_words(PAGE_RES* page_res,
     output_pass(page_res_it, target_word_box);
   // end jetsoft
   #endif  //ndef DISABLED_LEGACY_ENGINE
-
   const auto pageseg_mode = static_cast<PageSegMode>(
       static_cast<int>(tessedit_pageseg_mode));
   textord_.CleanupSingleRowResult(pageseg_mode, page_res);
@@ -461,7 +500,7 @@ bool Tesseract::recog_all_words(PAGE_RES* page_res,
     monitor->progress = 100;
   }
   return true;
-}
+} // end function
 
 #ifndef DISABLED_LEGACY_ENGINE
 
@@ -905,21 +944,32 @@ static int SelectBestWords(double rating_ratio,
 int Tesseract::RetryWithLanguage(const WordData& word_data,
                                  WordRecognizer recognizer, bool debug,
                                  WERD_RES** in_word,
-                                 PointerVector<WERD_RES>* best_words) {
-  if (debug) {
+                                 PointerVector<WERD_RES>* best_words)
+{
+  if (debug)
+  {
     tprintf("Trying word using lang %s, oem %d\n",
             lang.string(), static_cast<int>(tessedit_ocr_engine_mode));
   }
+  
   // Run the recognizer on the word.
   PointerVector<WERD_RES> new_words;
+
+#ifdef ANDROID_DEBUG
+  LOGD("MARS ccmain/control.cpp 958 int Tesseract::RetryWithLanguage");
   (this->*recognizer)(word_data, in_word, &new_words);
-  if (new_words.empty()) {
+#endif
+ 
+  if (new_words.empty())
+  {
     // Transfer input word to new_words, as the classifier must have put
     // the result back in the input.
     new_words.push_back(*in_word);
     *in_word = nullptr;
   }
-  if (debug) {
+  
+  if (debug)
+  {
     for (int i = 0; i < new_words.size(); ++i)
       new_words[i]->DebugTopChoice("Lang result");
   }
@@ -936,7 +986,7 @@ static bool WordsAcceptable(const PointerVector<WERD_RES>& words) {
     if (words[w]->tess_failed || !words[w]->tess_accepted) return false;
   }
   return true;
-}
+} // end function
 
 // Moves good-looking "noise"/diacritics from the reject list to the main
 // blob list on the current word. Returns true if anything was done, and
@@ -1331,7 +1381,8 @@ float Tesseract::ClassifyBlobAsWord(int pass_n, PAGE_RES_IT* pr_it,
 // If recognition was not successful, tries all available languages until
 // it gets a successful result or runs out of languages. Keeps the best result.
 void Tesseract::classify_word_and_language(int pass_n, PAGE_RES_IT* pr_it,
-                                           WordData* word_data) {
+                                           WordData* word_data)
+{
 #ifdef DISABLED_LEGACY_ENGINE
   WordRecognizer recognizer = &Tesseract::classify_word_pass1;
 #else
@@ -1345,28 +1396,40 @@ void Tesseract::classify_word_and_language(int pass_n, PAGE_RES_IT* pr_it,
   const WERD_RES* word = word_data->word;
   clock_t start_t = clock();
   const bool debug = classify_debug_level > 0 || multilang_debug_level > 0;
-  if (debug) {
+  if (debug)
+  {
     tprintf("%s word with lang %s at:",
             word->done ? "Already done" : "Processing",
             most_recently_used_->lang.string());
     word->word->bounding_box().print();
   }
-  if (word->done) {
+
+  if (word->done)
+  {
     // If done on pass1, leave it as-is.
     if (!word->tess_failed)
       most_recently_used_ = word->tesseract;
     return;
   }
+
   int sub = sub_langs_.size();
-  if (most_recently_used_ != this) {
+  if (most_recently_used_ != this)
+  {
     // Get the index of the most_recently_used_.
     for (sub = 0; sub < sub_langs_.size() &&
          most_recently_used_ != sub_langs_[sub]; ++sub) {}
   }
+
+#ifdef ANDROID_DEBUG
+LOGD("MARS ccmain/control.cpp 1403 void Tesseract::classify_word_and_language");
+#endif
   most_recently_used_->RetryWithLanguage(
       *word_data, recognizer, debug, &word_data->lang_words[sub], &best_words);
+  
   Tesseract* best_lang_tess = most_recently_used_;
-  if (!WordsAcceptable(best_words)) {
+
+  if (!WordsAcceptable(best_words))
+  {
     // Try all the other languages to see if they are any better.
     if (most_recently_used_ != this &&
         this->RetryWithLanguage(*word_data, recognizer, debug,
@@ -1399,12 +1462,14 @@ void Tesseract::classify_word_and_language(int pass_n, PAGE_RES_IT* pr_it,
     tprintf("no best words!!\n");
   }
   clock_t ocr_t = clock();
-  if (tessedit_timing_debug) {
-    tprintf("%s (ocr took %.2f sec)\n",
+  if (tessedit_timing_debug)
+  {
+	  tprintf
+	  	  ("%s (ocr took %.2f sec)\n",
             word->best_choice->unichar_string().string(),
             static_cast<double>(ocr_t-start_t)/CLOCKS_PER_SEC);
   }
-}
+} // end function
 
 /**
  * classify_word_pass1
@@ -1414,24 +1479,30 @@ void Tesseract::classify_word_and_language(int pass_n, PAGE_RES_IT* pr_it,
 
 void Tesseract::classify_word_pass1(const WordData& word_data,
                                     WERD_RES** in_word,
-                                    PointerVector<WERD_RES>* out_words) {
+                                    PointerVector<WERD_RES>* out_words)
+{
   ROW* row = word_data.row;
   BLOCK* block = word_data.block;
   prev_word_best_choice_ = word_data.prev_word != nullptr
       ? word_data.prev_word->word->best_choice : nullptr;
 #ifndef ANDROID_BUILD
-#ifdef DISABLED_LEGACY_ENGINE
-  if (tessedit_ocr_engine_mode == OEM_LSTM_ONLY) {
+#ifdef DISABLED_LEGACY_ENGINE  
+  if (tessedit_ocr_engine_mode == OEM_LSTM_ONLY)
+  {
 #else
   if (tessedit_ocr_engine_mode == OEM_LSTM_ONLY ||
-      tessedit_ocr_engine_mode == OEM_TESSERACT_LSTM_COMBINED) {
+      tessedit_ocr_engine_mode == OEM_TESSERACT_LSTM_COMBINED)
+  {
 #endif  // def DISABLED_LEGACY_ENGINE
-    if (!(*in_word)->odd_size || tessedit_ocr_engine_mode == OEM_LSTM_ONLY) {
+    if (!(*in_word)->odd_size || tessedit_ocr_engine_mode == OEM_LSTM_ONLY)
+	{
+	  LOGD("MARS control.cpp 1494 classify_word_pass1");
       LSTMRecognizeWord(*block, row, *in_word, out_words);
       if (!out_words->empty())
         return;  // Successful lstm recognition.
     }
-    if (tessedit_ocr_engine_mode == OEM_LSTM_ONLY) {
+    if (tessedit_ocr_engine_mode == OEM_LSTM_ONLY)
+	{
       // No fallback allowed, so use a fake.
       (*in_word)->SetupFake(lstm_recognizer_->GetUnicharset());
       return;
@@ -1451,16 +1522,19 @@ void Tesseract::classify_word_pass1(const WordData& word_data,
 #ifndef DISABLED_LEGACY_ENGINE
   WERD_RES* word = *in_word;
   match_word_pass_n(1, word, row, block);
-  if (!word->tess_failed && !word->word->flag(W_REP_CHAR)) {
+  if (!word->tess_failed && !word->word->flag(W_REP_CHAR))
+  {
     word->tess_would_adapt = AdaptableWord(word);
     bool adapt_ok = word_adaptable(word, tessedit_tess_adaption_mode);
 
-    if (adapt_ok) {
+    if (adapt_ok)
+	{
       // Send word to adaptive classifier for training.
       word->BestChoiceToCorrectText();
       LearnWord(nullptr, word);
       // Mark misadaptions if running blamer.
-      if (word->blamer_bundle != nullptr) {
+      if (word->blamer_bundle != nullptr)
+	  {
         word->blamer_bundle->SetMisAdaptionDebug(word->best_choice,
                                                  wordrec_debug_blamer);
       }
@@ -1470,7 +1544,7 @@ void Tesseract::classify_word_pass1(const WordData& word_data,
       tess_add_doc_word(word->best_choice);
   }
 #endif  // ndef DISABLED_LEGACY_ENGINE
-}
+  } // end function
 
 // Helper to report the result of the xheight fix.
 void Tesseract::ReportXhtFixResult(bool accept_new_word, float new_x_ht,
@@ -1585,11 +1659,15 @@ bool Tesseract::TestNewNormalization(int original_misfits,
 
 void Tesseract::classify_word_pass2(const WordData& word_data,
                                     WERD_RES** in_word,
-                                    PointerVector<WERD_RES>* out_words) {
+                                    PointerVector<WERD_RES>* out_words)
+{
+#ifdef ANDROID_DEBUG
+  LOGD("MARS control.cppp 1649");
+#endif
   // Return if we do not want to run Tesseract.
-  if (tessedit_ocr_engine_mode == OEM_LSTM_ONLY) {
+  if (tessedit_ocr_engine_mode == OEM_LSTM_ONLY)
     return;
-  }
+  
 #ifndef DISABLED_LEGACY_ENGINE
   ROW* row = word_data.row;
   BLOCK* block = word_data.block;
@@ -1597,9 +1675,11 @@ void Tesseract::classify_word_pass2(const WordData& word_data,
   prev_word_best_choice_ = word_data.prev_word != nullptr
       ? word_data.prev_word->word->best_choice : nullptr;
 
+  LOGD("MARS control.cppp 1660");
   set_global_subloc_code(SUBLOC_NORM);
   check_debug_pt(word, 30);
-  if (!word->done) {
+  if (!word->done)
+  {
     word->caps_height = 0.0;
     if (word->x_height == 0.0f)
       word->x_height = row->x_height();
@@ -1633,7 +1713,7 @@ void Tesseract::classify_word_pass2(const WordData& word_data,
   set_global_subloc_code(SUBLOC_NORM);
   check_debug_pt(word, 50);
 #endif  // ndef DISABLED_LEGACY_ENGINE
-}
+} // end function
 
 #ifndef DISABLED_LEGACY_ENGINE
 /**

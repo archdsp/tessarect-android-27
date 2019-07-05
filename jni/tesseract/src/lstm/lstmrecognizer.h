@@ -51,7 +51,8 @@ enum TrainingFlags {
 
 // Top-level line recognizer class for LSTM-based networks.
 // Note that a sub-class, LSTMTrainer is used for training.
-class LSTMRecognizer {
+class LSTMRecognizer
+{
  public:
   LSTMRecognizer();
   ~LSTMRecognizer();
@@ -298,3 +299,4 @@ class LSTMRecognizer {
 }  // namespace tesseract.
 
 #endif  // TESSERACT_LSTM_LSTMRECOGNIZER_H_
+ 

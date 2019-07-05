@@ -667,6 +667,7 @@ l_int32  ret;
 
     case IFF_PNG:   /* no gamma value stored */
         ret = pixWriteMemPng(pdata, psize, pix, 0.0);
+		LOGD("pixWriteMemPng 결과 %d", ret);
         break;
 
     case IFF_TIFF:           /* uncompressed */

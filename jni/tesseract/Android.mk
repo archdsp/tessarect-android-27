@@ -19,7 +19,8 @@ LOCAL_C_INCLUDES += \
   $(LIB_TESSERACT_PATH)/src/viewer \
   $(LIB_TESSERACT_PATH)/src/wordrec \
   $(LIB_TESSERACT_PATH)/src/glob \
-  $(LIB_LEPTONICA_PATH)/src/src
+  $(LIB_LEPTONICA_PATH)/src/src \
+  $(ANDROID_UTIL_PATH)
 
 LOCAL_SRC_FILES := $(wildcard \
   $(LIB_TESSERACT_PATH)/src/api/*.cpp \
@@ -43,11 +44,11 @@ $(info $(LOCAL_SRC_FILES))
 LOCAL_CPPFLAGS := \
   -DGRAPHICS_DISABLED \
   -DHAVE_CONFIG_H \
+  -DANDROID_DEBUG \
   -Wno-deprecated \
   --std=c++17 \
   -fPIE -pie
 #  -DUSE_STD_NAMESPACE \
-#  -include ctype.h \
 #  -include unistd.h \
 #  -fpermissive \
 #  -Wno-shift-negative-value \
@@ -55,8 +56,9 @@ LOCAL_CPPFLAGS := \
 
 LOCAL_LDLIBS += \
 	-llog \
-	-ljnigraphics
-	# -latomic \
+	-ljnigraphics \
+	-latomic \
+    -lz
 
 LOCAL_SHARED_LIBRARIES := liblept
 LOCAL_PRELINK_MODULE = false
